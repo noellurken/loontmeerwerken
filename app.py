@@ -142,11 +142,28 @@ aantal_kinderen = st.number_input("Aantal kinderen <12 jaar", 0, 10, 0)
 # -------------------------------
 st.subheader("Toeslagpartner")
 toeslagpartner = st.checkbox("Heeft toeslagpartner?")
+
 partner_inkomen = 0.0
 partner_vermogen = 0.0
 if toeslagpartner:
-    partner_inkomen = st.number_input("Bruto jaar toeslagpartner (€)", 0.0, 500000.0, 0.0, 1000.0)
+    st.markdown("**Rekenhulp bruto jaar toeslagpartner**")
+    partner_maandsalaris = st.number_input("Maandsalaris toeslagpartner (€)", 0.0, 20000.0, 0.0, 100.0)
+    partner_heeft_13e_maand = st.checkbox("13e maand toeslagpartner?", True)
+    partner_vakantiegeld = st.number_input("Vakantiegeld toeslagpartner (%)", 0.0, 20.0, 8.0, 0.1)
+    partner_basis_uren = st.number_input("Werkuren per week toeslagpartner", 0.0, 60.0, 0.0, 0.5)
+    partner_extra_uren = st.number_input("Extra werkuren per week toeslagpartner", 0.0, 40.0, 0.0, 0.5)
     partner_vermogen = st.number_input("Vermogen toeslagpartner (€)", 0.0, 500000.0, 0.0, 1000.0)
+    
+    partner_brutojaar = partner_maandsalaris*12
+    if partner_heeft_13e_maand:
+        partner_brutojaar += partner_maandsalaris
+    partner_brutojaar += partner_brutojaar*(partner_vakantiegeld/100)
+    bruto_per_uur_partner = partner_maandsalaris/partner_basis_uren if partner_basis_uren>0 else 0
+    extra_bruto_partner = partner_extra_uren*bruto_per_uur_partner*12
+    if partner_heeft_13e_maand:
+        extra_bruto_partner *= 13/12
+    extra_bruto_partner *= (1+partner_vakantiegeld/100)
+    partner_inkomen = partner_brutojaar + extra_bruto_partner
 
 # -------------------------------
 # Berekeningen bruto en netto
