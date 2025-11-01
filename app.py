@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import plotly.graph_objects as go
 
 st.title("Loont het om meer te werken? 💰")
 
@@ -226,8 +227,6 @@ for label, waarde in components.items():
 # -------------------------------
 # Grafiek: Extra netto-inkomen vs extra werkuren
 # -------------------------------
-import plotly.graph_objects as go
-
 st.subheader("Extra netto-inkomen vs extra werkuren (Plotly, geen hover-cijfers)")
 
 # Bereken range van extra werkuren: max 40 uur totaal
