@@ -27,11 +27,29 @@ else:
 st.write(f"Brutojaarsalaris: €{brutojaarsalaris:,.2f}")
 
 # -------------------------------
+# Extra werkuren per week
+# -------------------------------
+st.subheader("Rekenhulp extra werkuren")
+basis_werkuren = st.number_input("Aantal reguliere werkuren per week:", min_value=1, max_value=60, value=36, step=1)
+extra_werkuren = st.number_input("Aantal extra werkuren per week:", min_value=0, max_value=40, value=0, step=1)
+
+if basis_werkuren > 0:
+    bruto_maand_per_uur = maandsalaris / basis_werkuren
+    extra_bruto_maand = extra_werkuren * bruto_maand_per_uur
+    extra_bruto_jaar = extra_bruto_maand * 12
+else:
+    extra_bruto_jaar = 0
+
+st.write(f"Geschat extra bruto jaarinkomen bij {extra_werkuren} uur extra per week: €{extra_bruto_jaar:,.2f}")
+
+# -------------------------------
 # Invoer gebruiker
 # -------------------------------
 st.subheader("Persoonlijke gegevens")
 huidig_inkomen = st.number_input("Huidig bruto jaarinkomen (€):", min_value=0, step=1000, value=int(brutojaarsalaris))
-extra_inkomen = st.number_input("Extra bruto inkomen dat u overweegt (€):", min_value=0, step=1000)
+extra_inkomen = extra_bruto_jaar
+st.write(f"Extra bruto inkomen dat wordt gebruikt voor berekening: €{extra_inkomen:,.2f}")
+
 leeftijd = st.number_input("Leeftijd:", min_value=0, max_value=120, step=1)
 aow_leeftijd = 67
 heeft_aow_leeftijd = leeftijd >= aow_leeftijd
