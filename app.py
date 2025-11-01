@@ -129,7 +129,7 @@ vakantiegeld = st.number_input("Op hoeveel vakantiegeld heb je recht (%)?", 0.0,
 basis_uren = st.number_input("Hoeveel uur werk je op dit moment per week?", 0.0, 60.0, 0.0, 0.5)
 extra_uren = st.number_input("Hoeveel uur per week wil je extra gaan werken?", 0.0, 40.0, 0.0, 0.5)
 
-leeftijd = st.number_input("Wat is je leeftijd?", 16, 120, 35)
+leeftijd = st.number_input("Wat is je leeftijd?", 18, 120, 0)
 aow_leeftijd = 67
 heeft_aow = leeftijd >= aow_leeftijd
 huur = st.number_input("Wat betaal je per maand aan huur (€)?", 0.0, 5000.0, 0.0)
