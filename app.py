@@ -5,7 +5,10 @@ import plotly.graph_objects as go
 
 import streamlit as st
 
-st.set_page_config(theme="dark")
+st.set_page_config(
+    page_title="Loont meer werken?",
+    page_icon="💰",
+    layout="wide",
 
 st.title("Loont het om meer te werken? 💰")
 
