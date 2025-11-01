@@ -123,25 +123,25 @@ def netto_inkomen(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpart
 # Gebruiker inputs
 # -------------------------------
 st.subheader("Gegevens")
-maandsalaris = st.number_input("Maandsalaris (€)", 0.0, 20000.0, 0.0, 100.0)
-heeft_13e_maand = st.checkbox("13e maand?", True)
-vakantiegeld = st.number_input("Vakantiegeld (%)", 0.0, 20.0, 8.0, 0.1)
-basis_uren = st.number_input("Werkuren per week", 0.0, 60.0, 0.0, 0.5)
-extra_uren = st.number_input("Extra werkuren per week", 0.0, 40.0, 0.0, 0.5)
+maandsalaris = st.number_input("Wat is je huidige brutomaandsalaris (€)?", 0.0, 20000.0, 0.0, 100.0)
+heeft_13e_maand = st.checkbox("Heb je recht op een 13e maand?", False)
+vakantiegeld = st.number_input("Op hoeveel vakantiegeld heb je recht (%)?", 0.0, 20.0, 8.0, 0.1)
+basis_uren = st.number_input("Hoeveel uur werk je op dit moment per week?", 0.0, 60.0, 0.0, 0.5)
+extra_uren = st.number_input("Hoeveel uur per week wil je extra gaan werken?", 0.0, 40.0, 0.0, 0.5)
 
-leeftijd = st.number_input("Leeftijd gebruiker", 16, 120, 35)
+leeftijd = st.number_input("Wat is je leeftijd?", 16, 120, 0)
 aow_leeftijd = 67
 heeft_aow = leeftijd >= aow_leeftijd
-huur = st.number_input("Huur per maand (€)", 0.0, 5000.0, 0.0)
-vermogen = st.number_input("Totaal vermogen huishouden (€)", 0.0, 1000000.0, 0.0)
-kinderopvang_maand = st.number_input("Kinderopvang per maand (€)", 0.0, 2000.0, 0.0)
-aantal_kinderen = st.number_input("Aantal kinderen <12 jaar", 0, 10, 0)
+huur = st.number_input("Wat betaal je per maand aan huur (€)?", 0.0, 5000.0, 0.0)
+vermogen = st.number_input("Wat is je totale vermogen (€)?", 0.0, 1000000.0, 0.0)
+kinderopvang_maand = st.number_input("Hoeveel ben je per maand kwijt aan kinderopvang (€)?", 0.0, 2000.0, 0.0)
+aantal_kinderen = st.number_input("Hoeveel kinderen jonger dan 12 jaar heb je?", 0, 10, 0)
 
 # -------------------------------
 # Toeslagpartner
 # -------------------------------
 st.subheader("Toeslagpartner")
-toeslagpartner = st.checkbox("Heeft toeslagpartner?")
+toeslagpartner = st.checkbox("Heb je een toeslagpartner?")
 
 partner_inkomen = 0.0
 partner_vermogen = 0.0
