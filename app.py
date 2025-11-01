@@ -37,11 +37,11 @@ if basis_werkuren > 0:
 else:
     extra_bruto_jaar = 0
 
-# Extra bruto jaar inclusief 13e maand en vakantiegeld
+# Extra bruto jaar inclusief 13e maand proportioneel en vakantiegeld
 extra_bruto_jaar_correct = extra_bruto_jaar
 if heeft_13e_maand:
-    extra_bruto_jaar_correct += extra_bruto_jaar  # 13e maand over extra inkomen
-extra_bruto_jaar_correct += extra_bruto_jaar_correct * (vakantiegeld_percentage / 100)
+    extra_bruto_jaar_correct *= 13/12  # 13e maand proportioneel over extra uren
+extra_bruto_jaar_correct *= (1 + vakantiegeld_percentage / 100)
 
 st.write(f"Geschat extra bruto jaarinkomen bij {extra_werkuren:.1f} uur extra per week: {format_nl(extra_bruto_jaar_correct)}")
 
