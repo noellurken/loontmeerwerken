@@ -1,0 +1,173 @@
+import streamlit as st
+
+st.title("Loont het om meer te werken? 💰")
+
+# -------------------------------
+# Rekenhulp brutojaarsalaris
+# -------------------------------
+st.subheader("Rekenhulp brutojaarsalaris")
+maandsalaris = st.number_input("Brutomaandsalaris (€):", min_value=0, step=100)
+heeft_13e_maand = st.checkbox("13e maand ontvangen?")
+vakantiegeld_percentage = st.number_input("Vakantiegeld (%):", min_value=0.0, max_value=20.0, value=8.0, step=0.1)
+vakantiegeld_over_13e_maand = st.checkbox("Vakantiegeld over 13e maand?")
+
+# Berekening brutojaarsalaris
+brutojaarsalaris = maandsalaris * 12
+if heeft_13e_maand:
+    brutojaarsalaris += maandsalaris
+
+if vakantiegeld_over_13e_maand:
+    brutojaarsalaris += brutojaarsalaris * (vakantiegeld_percentage / 100)
+else:
+    basis = maandsalaris * 12
+    if heeft_13e_maand:
+        basis += maandsalaris
+    brutojaarsalaris += basis * (vakantiegeld_percentage / 100)
+
+st.write(f"Brutojaarsalaris: €{brutojaarsalaris:,.2f}")
+
+# -------------------------------
+# Invoer gebruiker
+# -------------------------------
+st.subheader("Persoonlijke gegevens")
+huidig_inkomen = st.number_input("Huidig bruto jaarinkomen (€):", min_value=0, step=1000, value=int(brutojaarsalaris))
+extra_inkomen = st.number_input("Extra bruto inkomen dat u overweegt (€):", min_value=0, step=1000)
+leeftijd = st.number_input("Leeftijd:", min_value=0, max_value=120, step=1)
+aow_leeftijd = 67
+heeft_aow_leeftijd = leeftijd >= aow_leeftijd
+
+st.subheader("Toeslagen")
+st.info("""
+**Toeslagpartner:** iemand met wie u samenwoont en een gezamenlijke huishouding voert, bijvoorbeeld uw echtgenoot, geregistreerd partner of iemand met wie u een notarieel samenlevingscontract heeft. 
+Het inkomen en vermogen van uw toeslagpartner tellen mee voor toeslagen zoals huurtoeslag en zorgtoeslag.
+""")
+toeslagpartner = st.checkbox("Heeft een toeslagpartner?")
+if toeslagpartner:
+    partner_inkomen = st.number_input("Bruto jaarinkomen toeslagpartner (€):", min_value=0, step=1000)
+    partner_vermogen = st.number_input("Vermogen toeslagpartner (€):", min_value=0, step=1000)
+else:
+    partner_inkomen = 0
+    partner_vermogen = 0
+
+huur = st.number_input("Huur per maand (€):", min_value=0, step=50)
+aantal_kinderen = st.number_input("Aantal kinderen jonger dan 12:", min_value=0, step=1)
+kinderopvang_maand = st.number_input("Kinderopvang per maand (€):", min_value=0, step=50)
+vermogen = st.number_input("Totaal vermogen huishouden (€):", min_value=0, step=1000)
+
+# -------------------------------
+# Belasting box 1
+# -------------------------------
+def belasting_box1(inkomen, aow_leeftijd=False):
+    if aow_leeftijd:
+        schijf1_max = 38441
+        tarief1 = 0.1792
+        tarief2 = 0.3748
+        tarief3 = 0.4950
+    else:
+        schijf1_max = 38441
+        tarief1 = 0.3582
+        tarief2 = 0.3748
+        tarief3 = 0.4950
+
+    if inkomen <= schijf1_max:
+        return inkomen * tarief1
+    elif inkomen <= 76817:
+        return schijf1_max * tarief1 + (inkomen - schijf1_max) * tarief2
+    else:
+        return schijf1_max * tarief1 + (76817 - schijf1_max) * tarief2 + (inkomen - 76817) * tarief3
+
+# -------------------------------
+# Heffingskortingen
+# -------------------------------
+def algemene_heffingskorting(inkomen, aow_leeftijd=False):
+    if aow_leeftijd:
+        max_ahk = 1536
+        afbouw_start = 28406
+        afbouw_percentage = 0.0317
+    else:
+        max_ahk = 3068
+        afbouw_start = 28406
+        afbouw_percentage = 0.06337
+
+    if inkomen <= afbouw_start:
+        return max_ahk
+    else:
+        korting = max_ahk - afbouw_percentage * (inkomen - afbouw_start)
+        return max(0, korting)
+
+def arbeidskorting(arbeidsinkomen, aow_leeftijd=False):
+    if aow_leeftijd:
+        if arbeidsinkomen <= 10000:
+            return 0.14 * arbeidsinkomen
+        elif arbeidsinkomen <= 50000:
+            return 1400 + 0.05 * (arbeidsinkomen - 10000)
+        else:
+            return max(0, 2802 - 0.051 * (arbeidsinkomen - 50000))
+    else:
+        if arbeidsinkomen <= 12169:
+            return 0.08053 * arbeidsinkomen
+        elif arbeidsinkomen <= 26288:
+            return 980 + 0.3003 * (arbeidsinkomen - 12169)
+        elif arbeidsinkomen <= 43071:
+            return 5220 + 0.02258 * (arbeidsinkomen - 26288)
+        elif arbeidsinkomen <= 129078:
+            return max(0, 5599 - 0.0651 * (arbeidsinkomen - 43071))
+        else:
+            return 0
+
+# -------------------------------
+# Toeslagen met vermogenstoets
+# -------------------------------
+def huurtoeslag(inkomen, huur, vermogen, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0):
+    totaal_inkomen = inkomen + toeslagpartner_inkomen
+    totaal_vermogen = vermogen + toeslagpartner_vermogen
+    max_vermogen = 74790 if toeslagpartner_inkomen > 0 else 37395
+    if totaal_vermogen > max_vermogen:
+        return 0
+    if totaal_inkomen >= 45000:
+        return 0
+    elif totaal_inkomen <= 25000:
+        return min(huur*0.3, 5000)
+    else:
+        return min(huur*0.3, 5000) * (1 - (totaal_inkomen - 25000)/20000)
+
+def zorgtoeslag(inkomen, vermogen, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0):
+    totaal_inkomen = inkomen + toeslagpartner_inkomen
+    totaal_vermogen = vermogen + toeslagpartner_vermogen
+    max_vermogen = 179429 if toeslagpartner_inkomen > 0 else 141896
+    if totaal_vermogen > max_vermogen:
+        return 0
+    if totaal_inkomen >= 45000:
+        return 0
+    elif totaal_inkomen <= 30000:
+        return 1000
+    else:
+        return 1000 * (1 - (totaal_inkomen - 30000)/15000)
+
+def kinderopvangtoeslag(inkomen, maand_kosten, kinderen):
+    max_vergoeding_per_kind = 0.33 * maand_kosten * 12
+    if inkomen >= 120000:
+        return 0
+    else:
+        afbouw = inkomen/120000
+        return max(0, max_vergoeding_per_kind * (1 - afbouw) * kinderen)
+
+# -------------------------------
+# Netto berekening
+# -------------------------------
+def netto_inkomen(inkomen):
+    return (inkomen
+            - belasting_box1(inkomen, heeft_aow_leeftijd)
+            + algemene_heffingskorting(inkomen, heeft_aow_leeftijd)
+            + arbeidskorting(inkomen, heeft_aow_leeftijd)
+            + huurtoeslag(inkomen, huur, vermogen, partner_inkomen, partner_vermogen)
+            + zorgtoeslag(inkomen, vermogen, partner_inkomen, partner_vermogen)
+            + kinderopvangtoeslag(inkomen, kinderopvang_maand, aantal_kinderen))
+
+huidig_netto = netto_inkomen(huidig_inkomen)
+nieuw_netto = netto_inkomen(huidig_inkomen + extra_inkomen)
+
+st.subheader("Resultaten")
+st.write(f"Huidig netto inkomen (incl. toeslagen): €{huidig_netto:,.0f}")
+st.write(f"Netto inkomen bij extra werk (incl. toeslagen): €{nieuw_netto:,.0f}")
+st.write(f"Extra netto inkomen: €{nieuw_netto - huidig_netto:,.0f}")
