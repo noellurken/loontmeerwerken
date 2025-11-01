@@ -63,12 +63,17 @@ Het inkomen en vermogen van uw toeslagpartner tellen mee voor toeslagen zoals hu
 """)
 toeslagpartner = st.checkbox("Heeft een toeslagpartner?")
 
+# Altijd variabelen definiëren
+partner_inkomen = 0.0
+partner_vermogen = 0.0
+
 if toeslagpartner:
     # Brutojaarsalaris rekenhulp toeslagpartner
     st.subheader("Rekenhulp brutojaarsalaris toeslagpartner")
     partner_maandsalaris = st.number_input("Brutomaandsalaris toeslagpartner (€):", min_value=0.0, step=100.0, format="%.2f")
     partner_heeft_13e_maand = st.checkbox("13e maand toeslagpartner ontvangen?", key="partner13e")
     partner_vakantiegeld_percentage = st.number_input("Vakantiegeld toeslagpartner (%):", min_value=0.0, max_value=20.0, value=8.0, step=0.1, key="partner_vg")
+    partner_vermogen = st.number_input("Vermogen toeslagpartner (€):", min_value=0.0, step=100.0)
     
     # Basis brutojaar toeslagpartner
     partner_brutojaar = partner_maandsalaris * 12
@@ -93,13 +98,8 @@ if toeslagpartner:
     partner_extra_bruto_jaar_correct *= (1 + partner_vakantiegeld_percentage / 100)
     
     # Totaal bruto jaar toeslagpartner
-    partner_totaal_brutojaar = partner_brutojaar + partner_extra_bruto_jaar_correct
-    st.write(f"Bruto jaarinkomen toeslagpartner: {format_nl(partner_totaal_brutojaar)}")
-    
-    partner_inkomen = partner_totaal_brutojaar
-else:
-    partner_inkomen = 0.0
-    partner_vermogen = 0.0
+    partner_inkomen = partner_brutojaar + partner_extra_bruto_jaar_correct
+    st.write(f"Bruto jaarinkomen toeslagpartner: {format_nl(partner_inkomen)}")
 
 # -------------------------------
 # Overige gegevens
