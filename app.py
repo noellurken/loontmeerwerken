@@ -7,8 +7,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Loont meer werken?",
-    page_icon="💰",
-    layout="wide",)
+    page_icon="💰",)
 
 st.title("Loont het om meer te werken? 💰")
 
