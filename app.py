@@ -134,7 +134,7 @@ def netto_inkomen(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpart
         - belasting_box1(inkomen, aow_leeftijd)
         + algemene_heffingskorting(inkomen, aow_leeftijd)
         + arbeidskorting(inkomen, aow_leeftijd)
-        + huurtoeslag_marge(inkomen, huur, leeftijd, toeslagpartner_inkomen, toeslagpartner_vermogen, vermogen)
+        + huurtoeslag(bruto_jaarloon, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
         + zorgtoeslag_marge(inkomen, vermogen, toeslagpartner_inkomen, toeslagpartner_vermogen)
         + kinderopvangtoeslag_marge(inkomen, kinderopvang_maand, aantal_kinderen)
     )
