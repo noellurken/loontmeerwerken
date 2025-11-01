@@ -229,11 +229,11 @@ delta_kinderopvang = kinderopvangtoeslag_marge(huidig_brutojaar + extra_brutojaa
 
 components = {
     "Extra belasting (verlies)": delta_belasting,
-    "Algemene heffingskorting effect": delta_ahk,
-    "Arbeidskorting effect": delta_arbeidskorting,
-    "Huurtoeslag effect": delta_huur,
-    "Zorgtoeslag effect": delta_zorg,
-    "Kinderopvangtoeslag effect": delta_kinderopvang
+    "Algemene heffingskorting": delta_ahk,
+    "Arbeidskorting": delta_arbeidskorting,
+    "Huurtoeslag": delta_huur,
+    "Zorgtoeslag": delta_zorg,
+    "Kinderopvangtoeslag": delta_kinderopvang
 }
 
 st.markdown("### Gedetailleerde effecten per component")
@@ -255,7 +255,7 @@ st.write(f"Marginale druk: {marginale_druk*100:.1f}%")
 # -------------------------------
 # Plot zonder hover cijfers
 # -------------------------------
-st.subheader("Extra netto-inkomen vs extra werkuren")
+st.subheader("Extra netto-inkomen t.o.v. extra werkuren")
 
 max_extra_uren = max(0, 40 - basis_uren)
 uren_range = list(range(0, int(max_extra_uren) + 1))
@@ -286,7 +286,7 @@ fig.add_trace(go.Scatter(
 ))
 fig.update_layout(
     xaxis_title="Extra werkuren per week",
-    yaxis_title="Extra netto inkomen",
+    yaxis_title="Extra netto-inkomen",
     template="simple_white"
 )
 st.plotly_chart(fig, use_container_width=True)
