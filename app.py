@@ -10,12 +10,113 @@ def format_nl(x):
     return f"€{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # -------------------------------
-# Belasting, heffingskortingen en toeslagen (zoals eerder)
+# Belasting en heffingskortingen
 # -------------------------------
-# [Hier komen alle functies: belasting_box1, algemene_heffingskorting, arbeidskorting,
-# huurtoeslag, zorgtoeslag, kinderopvangtoeslag, netto_inkomen]
-# (Exact dezelfde als in de vorige versie)
+def belasting_box1(inkomen, aow_leeftijd=False):
+    if aow_leeftijd:
+        schijf1_max = 38441
+        tarief1 = 0.1792
+        tarief2 = 0.3748
+        tarief3 = 0.4950
+    else:
+        schijf1_max = 38441
+        tarief1 = 0.3582
+        tarief2 = 0.3748
+        tarief3 = 0.4950
+    if inkomen <= schijf1_max:
+        return inkomen * tarief1
+    elif inkomen <= 76817:
+        return schijf1_max * tarief1 + (inkomen - schijf1_max) * tarief2
+    else:
+        return schijf1_max * tarief1 + (76817 - schijf1_max) * tarief2 + (inkomen - 76817) * tarief3
+
+def algemene_heffingskorting(inkomen, aow_leeftijd=False):
+    if aow_leeftijd:
+        max_ahk = 1536
+        afbouw_start = 28406
+        afbouw_percentage = 0.0317
+    else:
+        max_ahk = 3068
+        afbouw_start = 28406
+        afbouw_percentage = 0.06337
+    if inkomen <= afbouw_start:
+        return max_ahk
+    korting = max_ahk - afbouw_percentage * (inkomen - afbouw_start)
+    return max(0, korting)
+
+def arbeidskorting(arbeidsinkomen, aow_leeftijd=False):
+    if aow_leeftijd:
+        if arbeidsinkomen <= 10000:
+            return 0.14 * arbeidsinkomen
+        elif arbeidsinkomen <= 50000:
+            return 1400 + 0.05 * (arbeidsinkomen - 10000)
+        else:
+            return max(0, 2802 - 0.051 * (arbeidsinkomen - 50000))
+    else:
+        if arbeidsinkomen <= 12169:
+            return 0.08053 * arbeidsinkomen
+        elif arbeidsinkomen <= 26288:
+            return 980 + 0.3003 * (arbeidsinkomen - 12169)
+        elif arbeidsinkomen <= 43071:
+            return 5220 + 0.02258 * (arbeidsinkomen - 26288)
+        elif arbeidsinkomen <= 129078:
+            return max(0, 5599 - 0.0651 * (arbeidsinkomen - 43071))
+        else:
+            return 0
+
 # -------------------------------
+# Toeslagen
+# -------------------------------
+def huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
+    totaal_inkomen = inkomen + toeslagpartner_inkomen
+    totaal_vermogen = vermogen + toeslagpartner_vermogen
+    max_vermogen = 74790 if toeslagpartner_inkomen > 0 else 37395
+    if totaal_vermogen > max_vermogen:
+        return 0
+    huurgrens = 477.20 if leeftijd < 23 else 900.07
+    huur_effectief = min(huur, huurgrens)
+    if totaal_inkomen >= 45000:
+        return 0
+    elif totaal_inkomen <= 25000:
+        return min(huur_effectief * 0.3 * 12, 5000)
+    else:
+        return min(huur_effectief * 0.3 * 12, 5000) * (1 - (totaal_inkomen - 25000)/20000)
+
+def zorgtoeslag(inkomen, vermogen, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0):
+    totaal_inkomen = inkomen + toeslagpartner_inkomen
+    totaal_vermogen = vermogen + toeslagpartner_vermogen
+    max_vermogen = 179429 if toeslagpartner_inkomen > 0 else 141896
+    if totaal_vermogen > max_vermogen:
+        return 0
+    if totaal_inkomen >= 45000:
+        return 0
+    elif totaal_inkomen <= 30000:
+        return 1000
+    else:
+        return 1000 * (1 - (totaal_inkomen - 30000)/15000)
+
+def kinderopvangtoeslag(inkomen, maand_kosten, kinderen):
+    max_vergoeding_per_kind = 0.33 * maand_kosten * 12
+    if inkomen >= 120000:
+        return 0
+    else:
+        afbouw = inkomen / 120000
+        return max(0, max_vergoeding_per_kind * (1 - afbouw) * kinderen)
+
+# -------------------------------
+# Netto inkomen
+# -------------------------------
+def netto_inkomen(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0,
+                  vermogen=0, kinderopvang_maand=0, aantal_kinderen=0, aow_leeftijd=False):
+    return (
+        inkomen
+        - belasting_box1(inkomen, aow_leeftijd)
+        + algemene_heffingskorting(inkomen, aow_leeftijd)
+        + arbeidskorting(inkomen, aow_leeftijd)
+        + huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen, toeslagpartner_vermogen, vermogen)
+        + zorgtoeslag(inkomen, vermogen, toeslagpartner_inkomen, toeslagpartner_vermogen)
+        + kinderopvangtoeslag(inkomen, kinderopvang_maand, aantal_kinderen)
+    )
 
 # -------------------------------
 # Gebruiker inputs
@@ -27,7 +128,7 @@ vakantiegeld = st.number_input("Vakantiegeld (%)", 0.0, 20.0, 8.0, 0.1)
 basis_uren = st.number_input("Werkuren per week", 1.0, 60.0, 36.0, 0.5)
 extra_uren = st.number_input("Extra werkuren per week", 0.0, 40.0, 0.0, 0.5)
 
-# Bereken huidig bruto jaar
+# Huidig en extra bruto-inkomen berekenen
 huidig_brutojaar = maandsalaris*12
 if heeft_13e_maand:
     huidig_brutojaar += maandsalaris
@@ -63,8 +164,10 @@ if toeslagpartner:
 # -------------------------------
 # Netto berekening
 # -------------------------------
-huidig_netto = netto_inkomen(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow)
-nieuw_netto = netto_inkomen(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow)
+huidig_netto = netto_inkomen(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen,
+                             kinderopvang_maand, aantal_kinderen, heeft_aow)
+nieuw_netto = netto_inkomen(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen,
+                            vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow)
 extra_netto = nieuw_netto - huidig_netto
 marginale_druk = 1 - (extra_netto / extra_brutojaar) if extra_brutojaar > 0 else 0
 
@@ -114,7 +217,8 @@ for u in uren_range:
     if heeft_13e_maand:
         extra_bruto *= 13/12
     extra_bruto *= (1 + vakantiegeld/100)
-    netto_extra = netto_inkomen(huidig_brutojaar + extra_bruto, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow) - huidig_netto
+    netto_extra = netto_inkomen(huidig_brutojaar + extra_bruto, huur, leeftijd, partner_inkomen,
+                                partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow) - huidig_netto
     netto_extra_list.append(netto_extra)
 
 df = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen": netto_extra_list})
