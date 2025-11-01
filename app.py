@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 
 st.title("Loont het om meer te werken? 💰")
 
@@ -240,5 +241,13 @@ for u in uren_range:
                                 partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow) - huidig_netto
     netto_extra_list.append(netto_extra)
 
-df = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen (€)": netto_extra_list})
-st.line_chart(df.set_index("Extra werkuren"))
+df_chart = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen (€)": netto_extra_list})
+df_chart["Extra netto inkomen (€)"] = df_chart["Extra netto inkomen (€)"].apply(format_nl)
+
+chart = alt.Chart(df_chart).mark_line(point=True).encode(
+    x=alt.X("Extra werkuren:Q", title="Extra werkuren per week"),
+    y=alt.Y("Extra netto inkomen (€):N", title="Extra netto inkomen (€)"),
+    tooltip=["Extra werkuren", "Extra netto inkomen (€)"]
+).interactive()
+
+st.altair_chart(chart, use_container_width=True)
