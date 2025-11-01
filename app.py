@@ -169,12 +169,12 @@ partner_inkomen = 0.0
 partner_vermogen = 0.0
 
 if toeslagpartner:
-    partner_maandsalaris = st.number_input("Maandsalaris toeslagpartner (€)", 0.0, 20000.0, 0.0, 100.0)
-    partner_heeft_13e_maand = st.checkbox("13e maand toeslagpartner?", True)
-    partner_vakantiegeld = st.number_input("Vakantiegeld toeslagpartner (%)", 0.0, 20.0, 8.0, 0.1)
-    partner_basis_uren = st.number_input("Werkuren per week toeslagpartner", 0.0, 60.0, 0.0, 0.5)
-    partner_extra_uren = st.number_input("Extra werkuren per week toeslagpartner", 0.0, 40.0, 0.0, 0.5)
-    partner_vermogen = st.number_input("Vermogen toeslagpartner (€)", 0.0, 500000.0, 0.0, 1000.0)
+    partner_maandsalaris = st.number_input("Wat is het brutomaandsalaris van je toeslagpartner (€)?", 0.0, 20000.0, 0.0, 100.0)
+    partner_heeft_13e_maand = st.checkbox("Heeft je toeslagpartner recht op een 13e maand?", False)
+    partner_vakantiegeld = st.number_input("Op hoeveel vakantiegeld heeft je toeslagpartner recht (%)?", 0.0, 20.0, 8.0, 0.1)
+    partner_basis_uren = st.number_input("Hoeveel uur werkt je toeslagpartner op dit moment per week?", 0.0, 60.0, 0.0, 0.5)
+    partner_extra_uren = st.number_input("Hoeveel uur per week wil je toeslagpartner extra gaan werken?", 0.0, 40.0, 0.0, 0.5)
+    partner_vermogen = st.number_input("Wat is het totale vermgen van je toeslagpartner (€)?", 0.0, 500000.0, 0.0, 1000.0)
 
     partner_brutojaar = partner_maandsalaris*12
     if partner_heeft_13e_maand:
