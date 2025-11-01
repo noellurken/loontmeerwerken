@@ -7,6 +7,7 @@ st.title("Loont het om meer te werken? 💰")
 # Helper: Nederlandse notatie
 # -------------------------------
 def format_nl(x):
+    """Format voor bedragen: punt voor duizendtallen, komma voor decimalen"""
     return f"€{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # -------------------------------
@@ -122,31 +123,17 @@ def netto_inkomen(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpart
 # Gebruiker inputs
 # -------------------------------
 st.subheader("Gebruiker en extra werk")
-maandsalaris = st.number_input("Maandsalaris (€)", 0.0, 20000.0, 2500.0, 100.0)
+maandsalaris = st.number_input("Maandsalaris (€)", 0.0, 20000.0, 0.0, 100.0)
 heeft_13e_maand = st.checkbox("13e maand?", True)
 vakantiegeld = st.number_input("Vakantiegeld (%)", 0.0, 20.0, 8.0, 0.1)
-basis_uren = st.number_input("Werkuren per week", 1.0, 60.0, 36.0, 0.5)
+basis_uren = st.number_input("Werkuren per week", 0.0, 60.0, 0.0, 0.5)
 extra_uren = st.number_input("Extra werkuren per week", 0.0, 40.0, 0.0, 0.5)
 
-# Huidig en extra bruto-inkomen berekenen
-huidig_brutojaar = maandsalaris*12
-if heeft_13e_maand:
-    huidig_brutojaar += maandsalaris
-huidig_brutojaar += huidig_brutojaar*(vakantiegeld/100)
-bruto_per_uur = maandsalaris/basis_uren
-extra_brutojaar = extra_uren*bruto_per_uur*12
-if heeft_13e_maand:
-    extra_brutojaar *= 13/12
-extra_brutojaar *= (1+vakantiegeld/100)
-
-# -------------------------------
-# Overige gegevens
-# -------------------------------
 leeftijd = st.number_input("Leeftijd gebruiker", 16, 120, 35)
 aow_leeftijd = 67
 heeft_aow = leeftijd >= aow_leeftijd
-huur = st.number_input("Huur per maand (€)", 0.0, 5000.0, 800.0)
-vermogen = st.number_input("Totaal vermogen huishouden (€)", 0.0, 1000000.0, 20000.0)
+huur = st.number_input("Huur per maand (€)", 0.0, 5000.0, 0.0)
+vermogen = st.number_input("Totaal vermogen huishouden (€)", 0.0, 1000000.0, 0.0)
 kinderopvang_maand = st.number_input("Kinderopvang per maand (€)", 0.0, 2000.0, 0.0)
 aantal_kinderen = st.number_input("Aantal kinderen <12 jaar", 0, 10, 0)
 
@@ -162,8 +149,18 @@ if toeslagpartner:
     partner_vermogen = st.number_input("Vermogen toeslagpartner (€)", 0.0, 500000.0, 0.0, 1000.0)
 
 # -------------------------------
-# Netto berekening
+# Berekeningen bruto en netto
 # -------------------------------
+huidig_brutojaar = maandsalaris*12
+if heeft_13e_maand:
+    huidig_brutojaar += maandsalaris
+huidig_brutojaar += huidig_brutojaar*(vakantiegeld/100)
+bruto_per_uur = maandsalaris/basis_uren if basis_uren > 0 else 0
+extra_brutojaar = extra_uren*bruto_per_uur*12
+if heeft_13e_maand:
+    extra_brutojaar *= 13/12
+extra_brutojaar *= (1+vakantiegeld/100)
+
 huidig_netto = netto_inkomen(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen,
                              kinderopvang_maand, aantal_kinderen, heeft_aow)
 nieuw_netto = netto_inkomen(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen,
@@ -221,5 +218,5 @@ for u in uren_range:
                                 partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow) - huidig_netto
     netto_extra_list.append(netto_extra)
 
-df = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen": netto_extra_list})
+df = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen (€)": netto_extra_list})
 st.line_chart(df.set_index("Extra werkuren"))
