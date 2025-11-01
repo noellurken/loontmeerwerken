@@ -20,9 +20,7 @@ vakantiegeld_percentage = st.number_input("Vakantiegeld (%):", min_value=0.0, ma
 brutojaarsalaris = maandsalaris * 12
 if heeft_13e_maand:
     brutojaarsalaris += maandsalaris
-# Vakantiegeld altijd over totaal brutojaarsalaris
 brutojaarsalaris += brutojaarsalaris * (vakantiegeld_percentage / 100)
-
 st.write(f"Brutojaarsalaris: {format_nl(brutojaarsalaris)}")
 
 # -------------------------------
@@ -39,15 +37,20 @@ if basis_werkuren > 0:
 else:
     extra_bruto_jaar = 0
 
-st.write(f"Geschat extra bruto jaarinkomen bij {extra_werkuren:.1f} uur extra per week: {format_nl(extra_bruto_jaar)}")
+# Extra bruto jaar inclusief 13e maand en vakantiegeld
+extra_bruto_jaar_correct = extra_bruto_jaar
+if heeft_13e_maand:
+    extra_bruto_jaar_correct += extra_bruto_jaar  # 13e maand over extra inkomen
+extra_bruto_jaar_correct += extra_bruto_jaar_correct * (vakantiegeld_percentage / 100)
+
+st.write(f"Geschat extra bruto jaarinkomen bij {extra_werkuren:.1f} uur extra per week: {format_nl(extra_bruto_jaar_correct)}")
 
 # -------------------------------
 # Persoonlijke gegevens en toeslagpartner
 # -------------------------------
 st.subheader("Persoonlijke gegevens")
 huidig_inkomen = st.number_input("Huidig bruto jaarinkomen (€):", min_value=0.0, step=100.0, value=brutojaarsalaris)
-extra_inkomen = extra_bruto_jaar
-st.write(f"Extra bruto inkomen dat wordt gebruikt voor berekening: {format_nl(extra_inkomen)}")
+st.write(f"Extra bruto inkomen dat wordt gebruikt voor berekening: {format_nl(extra_bruto_jaar_correct)}")
 
 leeftijd = st.number_input("Leeftijd:", min_value=0, max_value=120, step=1)
 aow_leeftijd = 67
@@ -105,7 +108,6 @@ def algemene_heffingskorting(inkomen, aow_leeftijd=False):
         max_ahk = 3068
         afbouw_start = 28406
         afbouw_percentage = 0.06337
-
     if inkomen <= afbouw_start:
         return max_ahk
     else:
@@ -133,25 +135,16 @@ def arbeidskorting(arbeidsinkomen, aow_leeftijd=False):
             return 0
 
 # -------------------------------
-# Toeslagen met vermogenstoets + huurgrens
+# Toeslagen
 # -------------------------------
 def huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
     totaal_inkomen = inkomen + toeslagpartner_inkomen
     totaal_vermogen = vermogen + toeslagpartner_vermogen
-
-    # Vermogensgrens
     max_vermogen = 74790 if toeslagpartner_inkomen > 0 else 37395
     if totaal_vermogen > max_vermogen:
         return 0
-
-    # Huurgrens afhankelijk van leeftijd
-    if leeftijd < 23:
-        huurgrens = 477.20
-    else:
-        huurgrens = 900.07
-
+    huurgrens = 477.20 if leeftijd < 23 else 900.07
     huur_effectief = min(huur, huurgrens)
-
     if totaal_inkomen >= 45000:
         return 0
     elif totaal_inkomen <= 25000:
@@ -193,7 +186,7 @@ def netto_inkomen(inkomen):
             + kinderopvangtoeslag(inkomen, kinderopvang_maand, aantal_kinderen))
 
 huidig_netto = netto_inkomen(huidig_inkomen)
-nieuw_netto = netto_inkomen(huidig_inkomen + extra_inkomen)
+nieuw_netto = netto_inkomen(huidig_inkomen + extra_bruto_jaar_correct)
 
 st.subheader("Resultaten")
 st.write(f"Huidig netto inkomen (incl. toeslagen): {format_nl(huidig_netto)}")
