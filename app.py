@@ -226,7 +226,8 @@ for label, waarde in components.items():
 # -------------------------------
 # Grafiek: Extra netto-inkomen vs extra werkuren
 # -------------------------------
-st.subheader("Extra netto-inkomen vs extra werkuren")
+st.subheader("Extra netto-inkomen vs extra werkuren (oude stijl)")
+
 uren_range = list(range(0, int(max(40, extra_uren + 1)), 1))
 netto_extra_list = []
 for u in uren_range:
@@ -241,13 +242,14 @@ for u in uren_range:
                                 partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow) - huidig_netto
     netto_extra_list.append(netto_extra)
 
-df_chart = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen (€)": netto_extra_list})
-df_chart["Extra netto inkomen (€)"] = df_chart["Extra netto inkomen (€)"].apply(format_nl)
+# Dataframe
+df_chart = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen": netto_extra_list})
 
-chart = alt.Chart(df_chart).mark_line(point=True).encode(
-    x=alt.X("Extra werkuren:Q", title="Extra werkuren per week"),
-    y=alt.Y("Extra netto inkomen (€):N", title="Extra netto inkomen (€)"),
-    tooltip=["Extra werkuren", "Extra netto inkomen (€)"]
-).interactive()
+# Grafiek
+st.line_chart(df_chart.set_index("Extra werkuren"))
 
-st.altair_chart(chart, use_container_width=True)
+# Optioneel: naast de grafiek een tabel met nette notatie
+st.markdown("**Tabel met exacte waarden (€1.234,56):**")
+df_chart_nl = df_chart.copy()
+df_chart_nl["Extra netto inkomen"] = df_chart_nl["Extra netto inkomen"].apply(format_nl)
+st.dataframe(df_chart_nl.set_index("Extra werkuren"))
