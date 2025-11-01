@@ -197,6 +197,36 @@ nieuw_netto = netto_inkomen(huidig_brutojaar + extra_brutojaar, huur, leeftijd,
 
 extra_netto = nieuw_netto - huidig_netto
 marginale_druk = 1 - (extra_netto / extra_brutojaar) if extra_brutojaar > 0 else 0
+# -------------------------------
+# Componenten analyse (kleurweergave)
+# -------------------------------
+delta_belasting = -(belasting_box1(huidig_brutojaar + extra_brutojaar, heeft_aow) - belasting_box1(huidig_brutojaar, heeft_aow))
+delta_ahk = algemene_heffingskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - algemene_heffingskorting(huidig_brutojaar, heeft_aow)
+delta_arbeidskorting = arbeidskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - arbeidskorting(huidig_brutojaar, heeft_aow)
+delta_huur = huurtoeslag_marge(huidig_brutojaar + extra_brutojaar, huur, leeftijd,
+                               partner_inkomen, partner_vermogen, vermogen) - huurtoeslag_marge(huidig_brutojaar, huur, leeftijd,
+                                                                                                   partner_inkomen, partner_vermogen, vermogen)
+delta_zorg = zorgtoeslag_marge(huidig_brutojaar + extra_brutojaar, vermogen,
+                               partner_inkomen, partner_vermogen) - zorgtoeslag_marge(huidig_brutojaar, vermogen,
+                                                                                       partner_inkomen, partner_vermogen)
+delta_kinderopvang = kinderopvangtoeslag_marge(huidig_brutojaar + extra_brutojaar,
+                                               kinderopvang_maand, aantal_kinderen) - kinderopvangtoeslag_marge(huidig_brutojaar,
+                                                                                                             kinderopvang_maand, aantal_kinderen)
+
+components = {
+    "Extra belasting (verlies)": delta_belasting,
+    "Algemene heffingskorting effect": delta_ahk,
+    "Arbeidskorting effect": delta_arbeidskorting,
+    "Huurtoeslag effect": delta_huur,
+    "Zorgtoeslag effect": delta_zorg,
+    "Kinderopvangtoeslag effect": delta_kinderopvang
+}
+
+st.markdown("### Gedetailleerde effecten per component")
+
+for label, waarde in components.items():
+    kleur = "green" if waarde >= 0 else "red"
+    st.markdown(f"<span style='color:{kleur}'>{label}: {format_nl(waarde)}</span>", unsafe_allow_html=True)
 
 # -------------------------------
 # Resultaten tekst
