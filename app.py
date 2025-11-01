@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 
 st.title("Loont het om meer te werken? 💰")
 
@@ -231,37 +232,14 @@ st.write(f"Extra netto inkomen: {format_nl(nieuw_netto - huidig_netto)}")
 # -------------------------------
 st.subheader("Gedetailleerde opbouw extra netto-inkomen")
 
-belasting_huidig = belasting_box1(huidig_inkomen, heeft_aow_leeftijd)
-belasting_nieuw = belasting_box1(huidig_inkomen + extra_bruto_jaar_correct, heeft_aow_leeftijd)
-delta_belasting = belasting_nieuw - belasting_huidig
+delta_belasting = belasting_box1(huidig_inkomen + extra_bruto_jaar_correct, heeft_aow_leeftijd) - belasting_box1(huidig_inkomen, heeft_aow_leeftijd)
+delta_ahk = algemene_heffingskorting(huidig_inkomen + extra_bruto_jaar_correct, heeft_aow_leeftijd) - algemene_heffingskorting(huidig_inkomen, heeft_aow_leeftijd)
+delta_arbeidskorting = arbeidskorting(huidig_inkomen + extra_bruto_jaar_correct, heeft_aow_leeftijd) - arbeidskorting(huidig_inkomen, heeft_aow_leeftijd)
+delta_huur = huurtoeslag(huidig_inkomen + extra_bruto_jaar_correct, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen) - huurtoeslag(huidig_inkomen, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
+delta_zorg = zorgtoeslag(huidig_inkomen + extra_bruto_jaar_correct, vermogen, partner_inkomen, partner_vermogen) - zorgtoeslag(huidig_inkomen, vermogen, partner_inkomen, partner_vermogen)
+delta_kinderopvang = kinderopvangtoeslag(huidig_inkomen + extra_bruto_jaar_correct, kinderopvang_maand, aantal_kinderen) - kinderopvangtoeslag(huidig_inkomen, kinderopvang_maand, aantal_kinderen)
 
-ahk_huidig = algemene_heffingskorting(huidig_inkomen, heeft_aow_leeftijd)
-ahk_nieuw = algemene_heffingskorting(huidig_inkomen + extra_bruto_jaar_correct, heeft_aow_leeftijd)
-delta_ahk = ahk_nieuw - ahk_huidig
-
-arbeidskorting_huidig = arbeidskorting(huidig_inkomen, heeft_aow_leeftijd)
-arbeidskorting_nieuw = arbeidskorting(huidig_inkomen + extra_bruto_jaar_correct, heeft_aow_leeftijd)
-delta_arbeidskorting = arbeidskorting_nieuw - arbeidskorting_huidig
-
-huur_huidig = huurtoeslag(huidig_inkomen, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
-huur_nieuw = huurtoeslag(huidig_inkomen + extra_bruto_jaar_correct, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
-delta_huur = huur_nieuw - huur_huidig
-
-zorg_huidig = zorgtoeslag(huidig_inkomen, vermogen, partner_inkomen, partner_vermogen)
-zorg_nieuw = zorgtoeslag(huidig_inkomen + extra_bruto_jaar_correct, vermogen, partner_inkomen, partner_vermogen)
-delta_zorg = zorg_nieuw - zorg_huidig
-
-kinderopvang_huidig = kinderopvangtoeslag(huidig_inkomen, kinderopvang_maand, aantal_kinderen)
-kinderopvang_nieuw = kinderopvangtoeslag(huidig_inkomen + extra_bruto_jaar_correct, kinderopvang_maand, aantal_kinderen)
-delta_kinderopvang = kinderopvang_nieuw - kinderopvang_huidig
-
-extra_netto_detail = ( -delta_belasting
-                       + delta_ahk
-                       + delta_arbeidskorting
-                       + delta_huur
-                       + delta_zorg
-                       + delta_kinderopvang )
-
+extra_netto_detail = (-delta_belasting + delta_ahk + delta_arbeidskorting + delta_huur + delta_zorg + delta_kinderopvang)
 marginale_druk = 1 - (extra_netto_detail / extra_bruto_jaar_correct) if extra_bruto_jaar_correct > 0 else 0
 
 st.write(f"Extra bruto inkomen: {format_nl(extra_bruto_jaar_correct)}")
@@ -269,9 +247,33 @@ st.write(f"Extra netto inkomen: {format_nl(extra_netto_detail)}")
 st.write(f"Marginale druk: {marginale_druk*100:.1f}%")
 
 st.markdown("**Componenten van het extra netto-inkomen:**")
-st.write(f"- Extra belasting: {format_nl(delta_belasting)}")
-st.write(f"- Extra algemene heffingskorting: {format_nl(delta_ahk)}")
-st.write(f"- Extra arbeidskorting: {format_nl(delta_arbeidskorting)}")
-st.write(f"- Verandering huurtoeslag: {format_nl(delta_huur)}")
-st.write(f"- Verandering zorgtoeslag: {format_nl(delta_zorg)}")
-st.write(f"- Verandering kinderopvangtoeslag: {format_nl(delta_kinderopvang)}")
+st.write(f"- Extra belasting (verlies): {format_nl(delta_belasting)}")
+st.write(f"- Algemene heffingskorting effect: {format_nl(delta_ahk)}")
+st.write(f"- Arbeidskorting effect: {format_nl(delta_arbeidskorting)}")
+st.write(f"- Huurtoeslag effect: {format_nl(delta_huur)}")
+st.write(f"- Zorgtoeslag effect: {format_nl(delta_zorg)}")
+st.write(f"- Kinderopvangtoeslag effect: {format_nl(delta_kinderopvang)}")
+
+# -------------------------------
+# Grafiek: Extra netto-inkomen vs extra werkuren
+# -------------------------------
+st.subheader("Effect van extra werkuren op netto inkomen")
+
+uren_range = list(range(0, int(max(40, extra_werkuren + 1)), 1))
+netto_extra_list = []
+
+for u in uren_range:
+    extra_bruto = u * bruto_maand_per_uur * 12
+    if heeft_13e_maand:
+        extra_bruto *= 13/12
+    extra_bruto *= (1 + vakantiegeld_percentage / 100)
+    netto_extra = netto_inkomen(huidig_inkomen + extra_bruto) - huidig_netto
+    netto_extra_list.append(netto_extra)
+
+fig, ax = plt.subplots()
+ax.plot(uren_range, netto_extra_list, marker='o')
+ax.set_xlabel("Extra werkuren per week")
+ax.set_ylabel("Extra netto inkomen (€)")
+ax.set_title("Extra netto inkomen vs extra werkuren")
+ax.grid(True)
+st.pyplot(fig)
