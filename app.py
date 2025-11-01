@@ -122,7 +122,7 @@ def netto_inkomen(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpart
 # -------------------------------
 # Gebruiker inputs
 # -------------------------------
-st.subheader("Gebruiker en extra werk")
+st.subheader("Gegevens")
 maandsalaris = st.number_input("Maandsalaris (€)", 0.0, 20000.0, 0.0, 100.0)
 heeft_13e_maand = st.checkbox("13e maand?", True)
 vakantiegeld = st.number_input("Vakantiegeld (%)", 0.0, 20.0, 8.0, 0.1)
