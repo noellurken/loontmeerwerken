@@ -250,7 +250,7 @@ st.plotly_chart(fig, use_container_width=True)
 # -------------------------------
 # Tabel
 # -------------------------------
-st.subheader("Tabel (€1.234,56)")
+st.subheader("Tabel")
 df_chart_nl = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen": netto_extra_list})
 df_chart_nl["Extra netto inkomen"] = df_chart_nl["Extra netto inkomen"].apply(format_nl)
 st.dataframe(df_chart_nl.set_index("Extra werkuren"))
