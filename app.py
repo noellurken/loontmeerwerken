@@ -226,7 +226,9 @@ for label, waarde in components.items():
 # -------------------------------
 # Grafiek: Extra netto-inkomen vs extra werkuren
 # -------------------------------
-st.subheader("Extra netto-inkomen vs extra werkuren (oude stijl)")
+import plotly.graph_objects as go
+
+st.subheader("Extra netto-inkomen vs extra werkuren (Plotly, geen hover-cijfers)")
 
 # Bereken range van extra werkuren: max 40 uur totaal
 max_extra_uren = max(0, 40 - basis_uren)
@@ -247,12 +249,28 @@ for u in uren_range:
     ) - huidig_netto
     netto_extra_list.append(netto_extra)
 
-# Maak dataframe voor lijn-grafiek
-df_chart = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen": netto_extra_list})
-st.line_chart(df_chart.set_index("Extra werkuren"))
+# Plotly figuur
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=uren_range,
+    y=netto_extra_list,
+    mode='lines+markers',
+    line=dict(color='blue'),
+    marker=dict(size=6),
+    hoverinfo='skip'  # geen hover-informatie
+))
+
+fig.update_layout(
+    xaxis_title="Extra werkuren per week",
+    yaxis_title="Extra netto inkomen",
+    template="simple_white"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 # Tabel met Nederlandse notatie
 st.markdown("**Tabel met exacte waarden (€1.234,56):**")
-df_chart_nl = df_chart.copy()
+df_chart_nl = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto inkomen": netto_extra_list})
 df_chart_nl["Extra netto inkomen"] = df_chart_nl["Extra netto inkomen"].apply(format_nl)
 st.dataframe(df_chart_nl.set_index("Extra werkuren"))
+
