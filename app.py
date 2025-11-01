@@ -7,7 +7,6 @@ st.title("Loont het om meer te werken? 💰")
 # Helper: Nederlandse notatie
 # -------------------------------
 def format_nl(x):
-    """Format voor bedragen: punt voor duizendtallen, komma voor decimalen"""
     return f"€{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # -------------------------------
@@ -66,42 +65,42 @@ def arbeidskorting(arbeidsinkomen, aow_leeftijd=False):
             return 0
 
 # -------------------------------
-# Toeslagen
+# Toeslagen (marginaal effect)
 # -------------------------------
-def huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
+def huurtoeslag_marge(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
     totaal_inkomen = inkomen + toeslagpartner_inkomen
     totaal_vermogen = vermogen + toeslagpartner_vermogen
     max_vermogen = 74790 if toeslagpartner_inkomen > 0 else 37395
-    if totaal_vermogen > max_vermogen:
-        return 0
     huurgrens = 477.20 if leeftijd < 23 else 900.07
     huur_effectief = min(huur, huurgrens)
-    if totaal_inkomen >= 45000:
+    if totaal_vermogen > max_vermogen:
         return 0
-    elif totaal_inkomen <= 25000:
+    if totaal_inkomen <= 25000:
         return min(huur_effectief * 0.3 * 12, 5000)
-    else:
+    elif totaal_inkomen <= 45000:
         return min(huur_effectief * 0.3 * 12, 5000) * (1 - (totaal_inkomen - 25000)/20000)
+    else:
+        return 0
 
-def zorgtoeslag(inkomen, vermogen, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0):
+def zorgtoeslag_marge(inkomen, vermogen, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0):
     totaal_inkomen = inkomen + toeslagpartner_inkomen
     totaal_vermogen = vermogen + toeslagpartner_vermogen
     max_vermogen = 179429 if toeslagpartner_inkomen > 0 else 141896
     if totaal_vermogen > max_vermogen:
         return 0
-    if totaal_inkomen >= 45000:
-        return 0
-    elif totaal_inkomen <= 30000:
+    if totaal_inkomen <= 30000:
         return 1000
-    else:
+    elif totaal_inkomen <= 45000:
         return 1000 * (1 - (totaal_inkomen - 30000)/15000)
+    else:
+        return 0
 
-def kinderopvangtoeslag(inkomen, maand_kosten, kinderen):
+def kinderopvangtoeslag_marge(inkomen, maand_kosten, kinderen):
     max_vergoeding_per_kind = 0.33 * maand_kosten * 12
     if inkomen >= 120000:
         return 0
     else:
-        afbouw = inkomen / 120000
+        afbouw = min(1, inkomen / 120000)
         return max(0, max_vergoeding_per_kind * (1 - afbouw) * kinderen)
 
 # -------------------------------
@@ -114,9 +113,9 @@ def netto_inkomen(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpart
         - belasting_box1(inkomen, aow_leeftijd)
         + algemene_heffingskorting(inkomen, aow_leeftijd)
         + arbeidskorting(inkomen, aow_leeftijd)
-        + huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen, toeslagpartner_vermogen, vermogen)
-        + zorgtoeslag(inkomen, vermogen, toeslagpartner_inkomen, toeslagpartner_vermogen)
-        + kinderopvangtoeslag(inkomen, kinderopvang_maand, aantal_kinderen)
+        + huurtoeslag_marge(inkomen, huur, leeftijd, toeslagpartner_inkomen, toeslagpartner_vermogen, vermogen)
+        + zorgtoeslag_marge(inkomen, vermogen, toeslagpartner_inkomen, toeslagpartner_vermogen)
+        + kinderopvangtoeslag_marge(inkomen, kinderopvang_maand, aantal_kinderen)
     )
 
 # -------------------------------
@@ -189,9 +188,15 @@ marginale_druk = 1 - (extra_netto / extra_brutojaar) if extra_brutojaar > 0 else
 delta_belasting = -(belasting_box1(huidig_brutojaar + extra_brutojaar, heeft_aow) - belasting_box1(huidig_brutojaar, heeft_aow))
 delta_ahk = algemene_heffingskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - algemene_heffingskorting(huidig_brutojaar, heeft_aow)
 delta_arbeidskorting = arbeidskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - arbeidskorting(huidig_brutojaar, heeft_aow)
-delta_huur = huurtoeslag(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen) - huurtoeslag(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
-delta_zorg = zorgtoeslag(huidig_brutojaar + extra_brutojaar, vermogen, partner_inkomen, partner_vermogen) - zorgtoeslag(huidig_brutojaar, vermogen, partner_inkomen, partner_vermogen)
-delta_kinderopvang = kinderopvangtoeslag(huidig_brutojaar + extra_brutojaar, kinderopvang_maand, aantal_kinderen) - kinderopvangtoeslag(huidig_brutojaar, kinderopvang_maand, aantal_kinderen)
+delta_huur = huurtoeslag_marge(huidig_brutojaar + extra_brutojaar, huur, leeftijd,
+                               partner_inkomen, partner_vermogen, vermogen) - huurtoeslag_marge(huidig_brutojaar, huur, leeftijd,
+                                                                                                   partner_inkomen, partner_vermogen, vermogen)
+delta_zorg = zorgtoeslag_marge(huidig_brutojaar + extra_brutojaar, vermogen,
+                               partner_inkomen, partner_vermogen) - zorgtoeslag_marge(huidig_brutojaar, vermogen,
+                                                                                       partner_inkomen, partner_vermogen)
+delta_kinderopvang = kinderopvangtoeslag_marge(huidig_brutojaar + extra_brutojaar,
+                                               kinderopvang_maand, aantal_kinderen) - kinderopvangtoeslag_marge(huidig_brutojaar,
+                                                                                                             kinderopvang_maand, aantal_kinderen)
 
 components = {
     "Extra belasting (verlies)": delta_belasting,
