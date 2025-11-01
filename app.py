@@ -69,27 +69,39 @@ def arbeidskorting(arbeidsinkomen, aow_leeftijd=False):
 # -------------------------------
 # Toeslagen (met huurgrenscheck)
 # -------------------------------
-def huurtoeslag_marge(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
-    totaal_inkomen = inkomen + toeslagpartner_inkomen
-    totaal_vermogen = vermogen + toeslagpartner_vermogen
-
+def huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
+    # Toetsvermogen 2025
     max_vermogen = 74790 if toeslagpartner_inkomen > 0 else 37395
-    huurgrens = 477.20 if leeftijd < 23 else 900.07
-
-    # ✅ Als huur hoger is dan huurgrens → geen recht → marginaal effect = 0
-    if huur > huurgrens:
+    if vermogen + toeslagpartner_vermogen > max_vermogen:
         return 0
 
-    huur_effectief = min(huur, huurgrens)
+    # Huurgrenzen 2025
+    max_huur = 477.20 if leeftijd < 23 else 900.07
+    kwaliteitsgrens = 647.19  # kwaliteitskortingsgrens 2025 (met partner)
+    basishuur = 250  # vereenvoudiging (echte tabel is complexer)
 
-    if totaal_vermogen > max_vermogen:
+    if huur > max_huur:
         return 0
-    if totaal_inkomen <= 25000:
-        return min(huur_effectief * 0.3 * 12, 5000)
-    elif totaal_inkomen <= 45000:
-        return min(huur_effectief * 0.3 * 12, 5000) * (1 - (totaal_inkomen - 25000)/20000)
+
+    # Toetsingsinkomen
+    ti = inkomen + toeslagpartner_inkomen
+
+    # Normhuur afhankelijk van inkomen (vereenvoudigd model)
+    if ti <= 25000:
+        normhuur = 230
+    elif ti <= 35000:
+        normhuur = 230 + 0.05 * (ti - 25000)
+    elif ti <= 45000:
+        normhuur = 730 + 0.025 * (ti - 35000)
     else:
         return 0
+
+    # Huurtoeslag formule (vereenvoudigde maar realistische)
+    eigen_bijdrage = max(normhuur - basishuur, 0)
+    rekenhuur = min(huur, max_huur)
+
+    toeslag = max(rekenhuur - eigen_bijdrage - basishuur, 0)
+    return max(toeslag * 12, 0)
 
 def zorgtoeslag_marge(inkomen, vermogen, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0):
     totaal_inkomen = inkomen + toeslagpartner_inkomen
@@ -203,9 +215,11 @@ marginale_druk = 1 - (extra_netto / extra_brutojaar) if extra_brutojaar > 0 else
 delta_belasting = -(belasting_box1(huidig_brutojaar + extra_brutojaar, heeft_aow) - belasting_box1(huidig_brutojaar, heeft_aow))
 delta_ahk = algemene_heffingskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - algemene_heffingskorting(huidig_brutojaar, heeft_aow)
 delta_arbeidskorting = arbeidskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - arbeidskorting(huidig_brutojaar, heeft_aow)
-delta_huur = huurtoeslag_marge(huidig_brutojaar + extra_brutojaar, huur, leeftijd,
-                               partner_inkomen, partner_vermogen, vermogen) - huurtoeslag_marge(huidig_brutojaar, huur, leeftijd,
-                                                                                                   partner_inkomen, partner_vermogen, vermogen)
+huidig_ht = huurtoeslag(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
+nieuw_ht = huurtoeslag(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
+
+delta_huur = nieuw_ht - huidig_ht if huidig_ht > 0 else 0
+
 delta_zorg = zorgtoeslag_marge(huidig_brutojaar + extra_brutojaar, vermogen,
                                partner_inkomen, partner_vermogen) - zorgtoeslag_marge(huidig_brutojaar, vermogen,
                                                                                        partner_inkomen, partner_vermogen)
