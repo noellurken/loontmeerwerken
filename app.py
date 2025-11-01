@@ -3,6 +3,15 @@ import pandas as pd
 import altair as alt
 import plotly.graph_objects as go
 
+import streamlit as st
+
+st.set_page_config(
+    page_title="My App",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    theme="dark"
+)
+
 st.title("Loont het om meer te werken? 💰")
 
 # -------------------------------
