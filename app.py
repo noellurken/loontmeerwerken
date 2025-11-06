@@ -1,14 +1,8 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 import plotly.graph_objects as go
 
-import streamlit as st
-
-st.set_page_config(
-    page_title="Loont meer werken?",
-    page_icon="💰",)
-
+st.set_page_config(page_title="Loont meer werken?", page_icon="💰")
 st.title("Loont het om meer te werken? 💰")
 
 # -------------------------------
@@ -21,16 +15,14 @@ def format_nl(x):
 # Belasting en heffingskortingen
 # -------------------------------
 def belasting_box1(inkomen, aow_leeftijd=False):
+    schijf1_max = 38441
     if aow_leeftijd:
-        schijf1_max = 38441
         tarief1 = 0.1792
-        tarief2 = 0.3748
-        tarief3 = 0.4950
     else:
-        schijf1_max = 38441
         tarief1 = 0.3582
-        tarief2 = 0.3748
-        tarief3 = 0.4950
+    tarief2 = 0.3748
+    tarief3 = 0.4950
+
     if inkomen <= schijf1_max:
         return inkomen * tarief1
     elif inkomen <= 76817:
@@ -73,26 +65,17 @@ def arbeidskorting(arbeidsinkomen, aow_leeftijd=False):
             return 0
 
 # -------------------------------
-# Toeslagen (met huurgrenscheck)
+# Toeslagen
 # -------------------------------
 def huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartner_vermogen=0, vermogen=0):
-    # Toetsvermogen 2025
     max_vermogen = 74790 if toeslagpartner_inkomen > 0 else 37395
     if vermogen + toeslagpartner_vermogen > max_vermogen:
         return 0
-
-    # Huurgrenzen 2025
     max_huur = 477.20 if leeftijd < 23 else 900.07
-    kwaliteitsgrens = 647.19  # kwaliteitskortingsgrens 2025 (met partner)
-    basishuur = 250  # vereenvoudiging (echte tabel is complexer)
-
+    basishuur = 250
     if huur > max_huur:
         return 0
-
-    # Toetsingsinkomen
     ti = inkomen + toeslagpartner_inkomen
-
-    # Normhuur afhankelijk van inkomen (vereenvoudigd model)
     if ti <= 25000:
         normhuur = 230
     elif ti <= 35000:
@@ -101,11 +84,8 @@ def huurtoeslag(inkomen, huur, leeftijd, toeslagpartner_inkomen=0, toeslagpartne
         normhuur = 730 + 0.025 * (ti - 35000)
     else:
         return 0
-
-    # Huurtoeslag formule (vereenvoudigde maar realistische)
     eigen_bijdrage = max(normhuur - basishuur, 0)
     rekenhuur = min(huur, max_huur)
-
     toeslag = max(rekenhuur - eigen_bijdrage - basishuur, 0)
     return max(toeslag * 12, 0)
 
@@ -126,9 +106,8 @@ def kinderopvangtoeslag_marge(inkomen, maand_kosten, kinderen):
     max_vergoeding_per_kind = 0.33 * maand_kosten * 12
     if inkomen >= 120000:
         return 0
-    else:
-        afbouw = min(1, inkomen / 120000)
-        return max(0, max_vergoeding_per_kind * (1 - afbouw) * kinderen)
+    afbouw = min(1, inkomen / 120000)
+    return max(0, max_vergoeding_per_kind * (1 - afbouw) * kinderen)
 
 # -------------------------------
 # Netto inkomen berekening
@@ -154,12 +133,8 @@ heeft_13e_maand = st.checkbox("Heb je recht op een 13e maand?", False)
 vakantiegeld = st.number_input("Op hoeveel vakantiegeld heb je recht (%)?", 0.0, 20.0, 8.0, 0.1)
 basis_uren = st.number_input("Hoeveel uur werk je op dit moment per week?", 0.0, 60.0, 0.0, 0.5)
 extra_uren = st.number_input("Hoeveel uur per week wil je extra gaan werken?", 0.0, 40.0, 0.0, 0.5)
-
-# ✅ leeftijd start op 0 zoals gevraagd
 leeftijd = st.number_input("Wat is je leeftijd?", 0, 120, 0)
-
-aow_leeftijd = 67
-heeft_aow = leeftijd >= aow_leeftijd
+heeft_aow = leeftijd >= 67
 huur = st.number_input("Wat betaal je per maand aan huur (€)?", 0.0, 5000.0, 0.0)
 vermogen = st.number_input("Wat is je totale vermogen (€)?", 0.0, 1000000.0, 0.0)
 kinderopvang_maand = st.number_input("Hoeveel ben je per maand kwijt aan kinderopvang (€)?", 0.0, 2000.0, 0.0)
@@ -170,7 +145,6 @@ aantal_kinderen = st.number_input("Hoeveel kinderen jonger dan 12 jaar heb je?",
 # -------------------------------
 st.subheader("Toeslagpartner")
 toeslagpartner = st.checkbox("Heb je een toeslagpartner?")
-
 partner_inkomen = 0.0
 partner_vermogen = 0.0
 
@@ -180,58 +154,49 @@ if toeslagpartner:
     partner_vakantiegeld = st.number_input("Op hoeveel vakantiegeld heeft je toeslagpartner recht (%)?", 0.0, 20.0, 8.0, 0.1)
     partner_basis_uren = st.number_input("Hoeveel uur werkt je toeslagpartner op dit moment per week?", 0.0, 60.0, 0.0, 0.5)
     partner_extra_uren = st.number_input("Hoeveel uur per week wil je toeslagpartner extra gaan werken?", 0.0, 40.0, 0.0, 0.5)
-    partner_vermogen = st.number_input("Wat is het totale vermgen van je toeslagpartner (€)?", 0.0, 500000.0, 0.0, 1000.0)
+    partner_vermogen = st.number_input("Wat is het totale vermogen van je toeslagpartner (€)?", 0.0, 500000.0, 0.0, 1000.0)
 
-    partner_brutojaar = partner_maandsalaris*12
+    bruto_per_uur_partner = partner_maandsalaris / partner_basis_uren if partner_basis_uren > 0 else 0
+    partner_brutojaar = partner_maandsalaris * 12
     if partner_heeft_13e_maand:
         partner_brutojaar += partner_maandsalaris
-    partner_brutojaar += partner_brutojaar*(partner_vakantiegeld/100)
-    bruto_per_uur_partner = partner_maandsalaris/partner_basis_uren if partner_basis_uren>0 else 0
-    extra_bruto_partner = partner_extra_uren*bruto_per_uur_partner*12
+    partner_brutojaar += partner_brutojaar * (partner_vakantiegeld / 100)
+    extra_bruto_partner = partner_extra_uren * bruto_per_uur_partner * 12
     if partner_heeft_13e_maand:
         extra_bruto_partner *= 13/12
-    extra_bruto_partner *= (1+partner_vakantiegeld/100)
+    extra_bruto_partner *= (1 + partner_vakantiegeld / 100)
     partner_inkomen = partner_brutojaar + extra_bruto_partner
 
 # -------------------------------
 # Berekeningen
 # -------------------------------
-huidig_brutojaar = maandsalaris*12
+bruto_per_uur = maandsalaris / basis_uren if basis_uren > 0 else 0
+huidig_brutojaar = maandsalaris * 12
 if heeft_13e_maand:
     huidig_brutojaar += maandsalaris
-huidig_brutojaar += huidig_brutojaar*(vakantiegeld/100)
-
-bruto_per_uur = maandsalaris/basis_uren if basis_uren > 0 else 0
-extra_brutojaar = extra_uren*bruto_per_uur*12
+huidig_brutojaar += huidig_brutojaar * (vakantiegeld / 100)
+extra_brutojaar = extra_uren * bruto_per_uur * 12
 if heeft_13e_maand:
     extra_brutojaar *= 13/12
-extra_brutojaar *= (1+vakantiegeld/100)
+extra_brutojaar *= (1 + vakantiegeld / 100)
 
 huidig_netto = netto_inkomen(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen,
                              kinderopvang_maand, aantal_kinderen, heeft_aow)
 nieuw_netto = netto_inkomen(huidig_brutojaar + extra_brutojaar, huur, leeftijd,
                             partner_inkomen, partner_vermogen, vermogen, kinderopvang_maand,
                             aantal_kinderen, heeft_aow)
-
 extra_netto = nieuw_netto - huidig_netto
 marginale_druk = 1 - (extra_netto / extra_brutojaar) if extra_brutojaar > 0 else 0
+
 # -------------------------------
-# Componenten analyse (kleurweergave)
+# Componenten analyse
 # -------------------------------
 delta_belasting = -(belasting_box1(huidig_brutojaar + extra_brutojaar, heeft_aow) - belasting_box1(huidig_brutojaar, heeft_aow))
 delta_ahk = algemene_heffingskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - algemene_heffingskorting(huidig_brutojaar, heeft_aow)
 delta_arbeidskorting = arbeidskorting(huidig_brutojaar + extra_brutojaar, heeft_aow) - arbeidskorting(huidig_brutojaar, heeft_aow)
-huidig_ht = huurtoeslag(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
-nieuw_ht = huurtoeslag(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
-
-delta_huur = nieuw_ht - huidig_ht if huidig_ht > 0 else 0
-
-delta_zorg = zorgtoeslag_marge(huidig_brutojaar + extra_brutojaar, vermogen,
-                               partner_inkomen, partner_vermogen) - zorgtoeslag_marge(huidig_brutojaar, vermogen,
-                                                                                       partner_inkomen, partner_vermogen)
-delta_kinderopvang = kinderopvangtoeslag_marge(huidig_brutojaar + extra_brutojaar,
-                                               kinderopvang_maand, aantal_kinderen) - kinderopvangtoeslag_marge(huidig_brutojaar,
-                                                                                                             kinderopvang_maand, aantal_kinderen)
+delta_huur = huurtoeslag(huidig_brutojaar + extra_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen) - huurtoeslag(huidig_brutojaar, huur, leeftijd, partner_inkomen, partner_vermogen, vermogen)
+delta_zorg = zorgtoeslag_marge(huidig_brutojaar + extra_brutojaar, vermogen, partner_inkomen, partner_vermogen) - zorgtoeslag_marge(huidig_brutojaar, vermogen, partner_inkomen, partner_vermogen)
+delta_kinderopvang = kinderopvangtoeslag_marge(huidig_brutojaar + extra_brutojaar, kinderopvang_maand, aantal_kinderen) - kinderopvangtoeslag_marge(huidig_brutojaar, kinderopvang_maand, aantal_kinderen)
 
 components = {
     "Extra belasting (verlies)": delta_belasting,
@@ -243,7 +208,6 @@ components = {
 }
 
 st.markdown("### Gedetailleerde effecten per component")
-
 for label, waarde in components.items():
     kleur = "green" if waarde >= 0 else "red"
     st.markdown(f"<span style='color:{kleur}'>{label}: {format_nl(waarde)}</span>", unsafe_allow_html=True)
@@ -257,50 +221,3 @@ st.write(f"Netto na extra werk: {format_nl(nieuw_netto)}")
 st.write(f"Extra netto: {format_nl(extra_netto)}")
 st.write(f"Extra bruto: {format_nl(extra_brutojaar)}")
 st.write(f"Marginale druk: {marginale_druk*100:.1f}%")
-
-# -------------------------------
-# Plot zonder hover cijfers
-# -------------------------------
-st.subheader("Extra netto-inkomen t.o.v. extra werkuren")
-
-max_extra_uren = max(0, 40 - basis_uren)
-uren_range = list(range(0, int(max_extra_uren) + 1))
-netto_extra_list = []
-
-for u in uren_range:
-    if u == 0:
-        netto_extra_list.append(0)
-        continue
-    extra_bruto = u * bruto_per_uur * 12
-    if heeft_13e_maand:
-        extra_bruto *= 13/12
-    extra_bruto *= (1 + vakantiegeld/100)
-    netto_extra = netto_inkomen(
-        huidig_brutojaar + extra_bruto, huur, leeftijd, partner_inkomen,
-        partner_vermogen, vermogen, kinderopvang_maand, aantal_kinderen, heeft_aow
-    ) - huidig_netto
-    netto_extra_list.append(netto_extra)
-
-fig = go.Figure()
-fig.add_trace(go.Scatter(
-    x=uren_range,
-    y=netto_extra_list,
-    mode='lines+markers',
-    line=dict(color='blue'),
-    marker=dict(size=6),
-    hoverinfo='skip'
-))
-fig.update_layout(
-    xaxis_title="Extra werkuren per week",
-    yaxis_title="Extra netto-inkomen",
-    template="simple_white"
-)
-st.plotly_chart(fig, use_container_width=True)
-
-# -------------------------------
-# Tabel
-# -------------------------------
-st.subheader("Tabel")
-df_chart_nl = pd.DataFrame({"Extra werkuren": uren_range, "Extra netto-inkomen": netto_extra_list})
-df_chart_nl["Extra netto-inkomen"] = df_chart_nl["Extra netto-inkomen"].apply(format_nl)
-st.dataframe(df_chart_nl.set_index("Extra werkuren"))
